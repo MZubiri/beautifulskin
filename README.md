@@ -77,6 +77,10 @@ El servicio interno `db-seed` también asegura los usuarios demo en cada
 despliegue. Es idempotente: repara `Admin/admin` y
 `trabajador1/trabajador` sin borrar los demás usuarios ni datos existentes.
 
+Coolify proporciona `SERVICE_URL_FRONTEND` al Compose. El Gateway utiliza ese
+valor como origen CORS permitido y conserva `http://localhost:4200` como valor
+predeterminado para la ejecución local.
+
 En Oracle Cloud, la instancia debe cumplir los requisitos de Coolify, tener
 Docker disponible y permitir conexiones SSH, HTTP y HTTPS en sus reglas de red.
 
