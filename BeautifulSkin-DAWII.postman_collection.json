@@ -1,0 +1,857 @@
+{
+  "info": {
+    "_postman_id": "e30be908-1616-43c3-8f0a-a00d86927bf5",
+    "name": "Beautiful Skin - DAWII",
+    "description": "Colección de endpoints para probar el sistema de microservicios de Beautiful Skin a través de su API Gateway en el puerto 8050.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Iniciar Sesión (Login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login exitoso responde 200\", function () { pm.response.to.have.status(200); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.token) {",
+                  "    pm.globals.set(\"beautiful_skin_jwt\", jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"Admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Envía credenciales para iniciar sesión. Si es exitoso, un script guarda el JWT devuelto en la variable global {{beautiful_skin_jwt}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"trabajador1\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/v1/auth/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "v1",
+                "auth",
+                "create"
+              ]
+            },
+            "description": "Crea un usuario con contraseña BCrypt y rol ROLE_TRABAJADOR. La respuesta no expone el hash."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Verificar rechazo sin JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Sin JWT responde 401\", function () { pm.response.to.have.status(401); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Comprueba que los servicios de negocio rechazan peticiones sin JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar todos los productos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Retorna la lista de todos los productos de protección solar."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar producto por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            },
+            "description": "Busca y retorna un producto específico por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar producto por Código de Barras",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos/barras/7750123456789",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos",
+                "barras",
+                "7750123456789"
+              ]
+            },
+            "description": "Busca un producto por su código de barras, útil para integración con lectoras y cámaras."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar productos con Alerta de Stock Mínimo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos/alertas",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos",
+                "alertas"
+              ]
+            },
+            "description": "Retorna la lista de productos cuyo stock es menor o igual a su stock mínimo configurado."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo producto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Protector Solar Hidratante Aqua 100ml\",\n  \"descripcion\": \"Bloqueador de alta protección con ácido hialurónico.\",\n  \"precio\": 55.00,\n  \"stock\": 50,\n  \"idCategoria\": 3,\n  \"stockMinimo\": 15,\n  \"codigoBarras\": \"7750123456888\",\n  \"imagenUrl\": \"https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=200\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Inserta un nuevo producto de protección solar en la base de datos."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar producto existente",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Protector Solar FPS 50+ Toque Seco (Modificado)\",\n  \"descripcion\": \"Protector solar facial de toque seco para control de brillo. 50ml.\",\n  \"precio\": 69.90,\n  \"stock\": 15,\n  \"idCategoria\": 3,\n  \"stockMinimo\": 20,\n  \"codigoBarras\": \"7750123456789\",\n  \"imagenUrl\": \"https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=200\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            },
+            "description": "Modifica un producto existente por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/productos/6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "productos",
+                "6"
+              ]
+            },
+            "description": "Elimina un producto del catálogo por su ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kárdex / Movimientos",
+      "item": [
+        {
+          "name": "Listar todos los movimientos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/kardex",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "kardex"
+              ]
+            },
+            "description": "Retorna el historial completo de auditoría del Kárdex (Entradas, Salidas y Ajustes)."
+          },
+          "response": []
+        },
+        {
+          "name": "Filtrar movimientos por Producto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/kardex/producto/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "kardex",
+                "producto",
+                "1"
+              ]
+            },
+            "description": "Obtiene la bitácora de movimientos exclusiva de un producto por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Ajuste Manual (Movimiento)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idProducto\": 1,\n  \"tipoMovimiento\": \"AJUSTE\",\n  \"cantidad\": 5,\n  \"justificacion\": \"Ajuste por inventario físico anual (sobrante)\",\n  \"idUsuario\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/kardex/registrar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "kardex",
+                "registrar"
+              ]
+            },
+            "description": "Registra un ajuste manual en el kárdex del producto especificado y actualiza automáticamente el stock final."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Proveedores",
+      "item": [
+        {
+          "name": "Listar todos los proveedores",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            },
+            "description": "Retorna la lista de todos los proveedores registrados."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar proveedor por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "1"
+              ]
+            },
+            "description": "Retorna los datos de un proveedor específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo proveedor",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Distribuidora Solares del Sur S.A.C.\",\n  \"ruc\": \"20778899123\",\n  \"direccion\": \"Av. La Marina 789, San Miguel\",\n  \"telefono\": \"01-5556688\",\n  \"email\": \"ventas@solaresdelsur.com.pe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            },
+            "description": "Registra un nuevo proveedor en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar proveedor existente",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Dermatología Cosmética del Perú S.A.C. (Actualizado)\",\n  \"ruc\": \"20551234567\",\n  \"direccion\": \"Av. Javier Prado Este 1234, San Isidro\",\n  \"telefono\": \"01-4445566\",\n  \"email\": \"compras@dermacosmetica.pe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "1"
+              ]
+            },
+            "description": "Modifica un proveedor existente por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar proveedor",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "3"
+              ]
+            },
+            "description": "Elimina un proveedor por su ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Órdenes de Compra",
+      "item": [
+        {
+          "name": "Listar todas las órdenes",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/ordenes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "ordenes"
+              ]
+            },
+            "description": "Retorna la lista de todas las órdenes de compra emitidas."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar orden por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/ordenes/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "ordenes",
+                "1"
+              ]
+            },
+            "description": "Retorna los detalles principales de una orden por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar detalles de una orden",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/ordenes/1/detalles",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "ordenes",
+                "1",
+                "detalles"
+              ]
+            },
+            "description": "Retorna el listado de productos comprados en esa orden, cantidades y precios acordados."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear orden de compra",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orden\": {\n    \"idProveedor\": 1,\n    \"total\": 525.00\n  },\n  \"detalles\": [\n    {\n      \"idProducto\": 1,\n      \"cantidad\": 5,\n      \"precioUnitario\": 45.00\n    },\n    {\n      \"idProducto\": 2,\n      \"cantidad\": 10,\n      \"precioUnitario\": 30.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/ordenes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "ordenes"
+              ]
+            },
+            "description": "Emite una nueva orden de compra en estado PENDIENTE, especificando el proveedor y el detalle de productos a solicitar."
+          },
+          "response": []
+        },
+        {
+          "name": "Recibir orden de compra",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{beautiful_skin_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8050/api/proveedores/ordenes/2/recibir?idUsuario=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8050",
+              "path": [
+                "api",
+                "proveedores",
+                "ordenes",
+                "2",
+                "recibir"
+              ],
+              "query": [
+                {
+                  "key": "idUsuario",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Cambia el estado de una orden a RECIBIDA, lo cual añade automáticamente los productos al stock del catálogo y registra las entradas correspondientes en el Kárdex."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

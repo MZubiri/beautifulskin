@@ -1,0 +1,54 @@
+server:
+  port: 8050
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      server:
+        webmvc:
+          routes:
+            - id: login-service
+              uri: ${LOGIN_SERVICE_URI:lb://login-service}
+              predicates:
+                - Path=/v1/auth/**
+            - id: productos-service
+              uri: ${PRODUCTOS_SERVICE_URI:lb://productos-service}
+              predicates:
+                - Path=/api/productos/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    id: productosCB
+                    fallbackUri: forward:/fallback/productos
+            - id: kardex-service
+              uri: ${KARDEX_SERVICE_URI:lb://kardex-service}
+              predicates:
+                - Path=/api/kardex/**
+            - id: proveedores-service
+              uri: ${PROVEEDORES_SERVICE_URI:lb://proveedores-service}
+              predicates:
+                - Path=/api/proveedores/**
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+

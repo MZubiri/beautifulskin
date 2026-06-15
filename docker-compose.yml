@@ -1,0 +1,140 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configure MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: RayosUV_db
+      TZ: America/Lima
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./RayosUV_db.sql:/docker-entrypoint-initdb.d/01-RayosUV_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  eureka:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: eureka-service
+    restart: unless-stopped
+    expose:
+      - "8761"
+
+  login:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: login-service
+    restart: unless-stopped
+    environment: &service-environment
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/RayosUV_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima&useUnicode=true&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configure MYSQL_ROOT_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      APP_JWT_SECRET: ${JWT_SECRET:?Configure JWT_SECRET}
+      TZ: America/Lima
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+
+  productos:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: productos-service
+    restart: unless-stopped
+    environment:
+      <<: *service-environment
+      APP_UPLOAD_DIR: /data/productos
+    volumes:
+      - product-images:/data/productos
+    networks:
+      default:
+        aliases:
+          - productos-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+
+  kardex:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: kardex-service
+    restart: unless-stopped
+    environment: *service-environment
+    networks:
+      default:
+        aliases:
+          - kardex-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+
+  proveedores:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: proveedores-service
+    restart: unless-stopped
+    environment: *service-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+      args:
+        SERVICE: api-gateway
+    restart: unless-stopped
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      LOGIN_SERVICE_URI: http://login:8070
+      PRODUCTOS_SERVICE_URI: http://productos:8081
+      KARDEX_SERVICE_URI: http://kardex:8082
+      PROVEEDORES_SERVICE_URI: http://proveedores:8083
+      TZ: America/Lima
+    expose:
+      - "8050"
+    depends_on:
+      - eureka
+      - login
+      - productos
+      - kardex
+      - proveedores
+
+  frontend:
+    build:
+      context: frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - gateway
+
+volumes:
+  mysql-data:
+  product-images:

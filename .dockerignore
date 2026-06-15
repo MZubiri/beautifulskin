@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+.env
+BeautifulSkin_DAWII_entrega.zip
+**/node_modules
+**/target
+**/dist
+**/bin
+**/.angular
+**/*.log
+productos-service/uploads

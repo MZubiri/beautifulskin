@@ -1,0 +1,230 @@
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap');
+
+/* Global styles */
+:root {
+  /* Light Mode Palette - HIGH CONTRAST */
+  --bg-primary: #f1f5f9;       /* Slate 100 - distinct from cards */
+  --bg-sidebar: #0f172a;       /* Dark slate sidebar for high contrast structure */
+  --bg-card: #ffffff;
+  --bg-modal: #ffffff;
+  --border-glass: #cbd5e1;     /* Slate 300 - clear borders */
+  --text-primary: #0f172a;     /* Slate 900 - maximum readability */
+  --text-secondary: #475569;   /* Slate 600 - distinct secondary text */
+  --text-inverse: #ffffff;
+  --text-on-dark: #f8fafc;
+  --text-on-dark-muted: #cbd5e1;
+
+  --accent-color: #c2410c;     /* Orange 700 - readable with white text */
+  --accent-hover: #9a3412;     /* Orange 800 */
+  --accent-light: rgba(194, 65, 12, 0.12);
+  --text-on-accent: #ffffff;
+
+  --shadow-color: rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+
+  --border-subtle: #e2e8f0;    /* Slate 200 */
+  --border-on-dark: #334155;
+  --bg-hover: #f8fafc;         /* Slate 50 - clear table row/button hover */
+  --bg-soft: #f8fafc;
+  --scrollbar-thumb: rgba(71, 85, 105, 0.35);
+
+  --status-ok-bg: rgba(22, 163, 74, 0.1);
+  --status-ok-color: #15803d;  /* Green 700 */
+  --status-warning-bg: rgba(217, 119, 6, 0.1);
+  --status-warning-color: #b45309; /* Amber 700 */
+  --status-danger-bg: rgba(220, 38, 38, 0.1);
+  --status-danger-color: #b91c1c; /* Red 700 */
+
+  --glass-blur: blur(0px);     /* Disable blur in light mode for max contrast */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 4px;
+  --transition-speed: 0.25s;
+
+  color-scheme: light;
+}
+
+body.dark-mode, :root.dark-mode {
+  /* Dark Mode Palette - ULTRA PREMIUM DEEP BLUE */
+  --bg-primary: #090d16;
+  --bg-sidebar: #111827;
+  --bg-card: #1f2937;
+  --bg-modal: #111827;
+  --border-glass: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-inverse: #090d16;
+  --text-on-dark: #f9fafb;
+  --text-on-dark-muted: #cbd5e1;
+
+  --accent-color: #ff8b52;
+  --accent-hover: #ff702e;
+  --accent-light: rgba(255, 139, 82, 0.15);
+  --text-on-accent: #090d16;
+
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+  --border-subtle: #374151;
+  --border-on-dark: #374151;
+  --bg-hover: #2a3342;         /* Very clear hover in dark mode */
+  --bg-soft: #182231;
+  --scrollbar-thumb: rgba(203, 213, 225, 0.25);
+
+  --status-ok-bg: rgba(34, 197, 94, 0.2);
+  --status-ok-color: #4ade80;
+  --status-warning-bg: rgba(245, 158, 11, 0.2);
+  --status-warning-color: #fbbf24;
+  --status-danger-bg: rgba(239, 68, 68, 0.2);
+  --status-danger-color: #f87171;
+
+  --glass-blur: blur(8px);
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* === Glassmorphism utilities === */
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-lg);
+  padding: 1rem;
+}
+
+.glass-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: var(--glass-blur);
+  border-left: 4px solid currentColor;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.glass-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.glass-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid var(--border-glass);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fade‑in transition for tabs */
+.fade-in {
+  animation: fadeIn var(--transition-speed) ease-out forwards;
+}
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+/* Button micro‑animation */
+button, .btn-primary-action, .btn-secondary-action, .btn-theme {
+  cursor: pointer;
+  transition: transform var(--transition-speed) ease, background-color var(--transition-speed);
+}
+button:hover, .btn-primary-action:hover, .btn-secondary-action:hover, .btn-theme:hover {
+  transform: scale(1.03);
+  background-color: var(--accent-hover);
+}
+
+/* Badge blinking for alerts */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.blink-badge {
+  animation: blink 1.5s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+/* Table glass style */
+.dashboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+.dashboard-table th, .dashboard-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.dashboard-table tbody tr {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-speed);
+}
+.dashboard-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+/* Card metrics (glass) */
+.metric-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Ensure modal uses glass effect */
+.modal-card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Utility – hide scrollbars inside modals */
+.modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Misc tweaks */
+a { color: var(--accent-color); text-decoration: none; }
+a:hover { text-decoration: underline; }

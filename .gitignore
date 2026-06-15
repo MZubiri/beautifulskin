@@ -1,0 +1,16 @@
+# Entrega local y archivos generados
+BeautifulSkin_DAWII_entrega.zip
+**/node_modules/
+**/target/
+**/dist/
+**/bin/
+**/.angular/
+*.log
+
+# IDE y configuración local
+.idea/
+.vscode/
+.env
+
+# Imágenes cargadas localmente
+productos-service/uploads/

@@ -1,0 +1,953 @@
+<div class="dashboard-wrapper glass-card">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">☀️</span>
+      <span class="logo-text">Beautiful Skin</span>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button class="nav-item" [class.active]="activeTab() === 'products'" (click)="activeTab.set('products')">
+        <span class="nav-icon">📦</span> Catálogo
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'kardex'" (click)="activeTab.set('kardex')">
+        <span class="nav-icon">📈</span> Kárdex / Movimientos
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'providers'" (click)="activeTab.set('providers')">
+        <span class="nav-icon">🤝</span> Proveedores
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'reports'" (click)="activeTab.set('reports')">
+        <span class="nav-icon">📊</span> Reportes
+        <span *ngIf="lowStockProducts().length > 0" class="alert-badge">{{ lowStockProducts().length }}</span>
+      </button>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="theme-switch-container">
+        <span class="theme-label">Modo {{ isDarkMode() ? 'Oscuro' : 'Claro' }}</span>
+        <button class="btn-theme" (click)="toggleTheme()">
+          {{ isDarkMode() ? '🌙' : '☀️' }}
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <div class="main-viewport">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <h1 class="header-title">
+          {{ activeTab() === 'products' ? 'Catálogo de Productos y Gestión de Inventario' : 
+             activeTab() === 'kardex' ? 'Registro e Historial de Kárdex' :
+             activeTab() === 'providers' ? 'Gestión de Proveedores y Órdenes' : 
+             'Análisis Financiero y Alertas' }}
+        </h1>
+      </div>
+      
+      <div class="header-right">
+        <!-- Stock Warnings Notification Bell -->
+        <button class="btn-notification" (click)="activeTab.set('reports')" title="Alertas de Stock Mínimo">
+          🔔
+          <span *ngIf="lowStockProducts().length > 0" class="badge-count">{{ lowStockProducts().length }}</span>
+        </button>
+
+        <div class="user-avatar-badge">
+          <span class="avatar-icon">👤</span>
+          <div class="avatar-details">
+            <span class="avatar-name">{{ username() || 'Trabajador' }}</span>
+            <span class="avatar-role">{{ userRole() === 'ROLE_ADMIN' ? 'Administrador' : 'Trabajador' }}</span>
+          </div>
+        </div>
+
+        <button class="btn-action-logout" (click)="logout()" title="Cerrar Sesión">
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="dashboard-content glass-card">
+      
+      <!-- Error Alerts -->
+      <div *ngIf="errorMessage()" class="glass-alert error-glass-alert">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-text">{{ errorMessage() }}</span>
+        <button class="close-alert-btn" (click)="errorMessage.set(null)">&times;</button>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading()" class="glass-loader" role="status" aria-live="polite">
+        <div class="glass-spinner"></div>
+        <span>Procesando...</span>
+      </div>
+
+      <!-- TAB 1: PRODUCT CATALOGUE -->
+      <div *ngIf="activeTab() === 'products'" class="tab-pane fade-in">
+        <div class="toolbar-section">
+          <!-- Left: Search and Barcode search -->
+          <div class="search-box-container">
+            <input 
+              type="text" 
+              class="search-input" 
+              placeholder="Buscar producto por código de barras..."
+              [ngModel]="barcodeSearchQuery()"
+              (ngModelChange)="barcodeSearchQuery.set($event); searchByBarcode($event)"
+            >
+            <button *ngIf="barcodeSearchQuery()" class="btn-clear-search" (click)="clearBarcodeSearch()">&times;</button>
+            <button class="btn-scan-action" (click)="openScanner('barcode_search')" title="Escanear con Cámara">
+              📷 Escanear
+            </button>
+          </div>
+
+          <!-- Right: Action Buttons -->
+          <div class="action-buttons-container">
+            <!-- Excel upload wrapper -->
+            <label class="btn-secondary-action excel-upload-label" title="Importar catálogo desde archivo Excel">
+              📥 Importar Excel
+              <input type="file" accept=".xlsx, .xls" (change)="importFromExcel($event)" style="display: none;">
+            </label>
+            <button class="btn-secondary-action" (click)="exportToExcel()" title="Exportar catálogo a Excel">
+              📤 Exportar Excel
+            </button>
+            <button *ngIf="userRole() === 'ROLE_ADMIN'" class="btn-primary-action" (click)="openCreateModal()">
+              ＋ Registrar Producto
+            </button>
+          </div>
+        </div>
+
+        <!-- Catalogue Table -->
+        <div *ngIf="products().length === 0" class="empty-state-card">
+          <span class="empty-icon">📦</span>
+          <h3>No se encontraron productos</h3>
+          <p>Utilice registrar producto, importe un Excel o limpie la búsqueda.</p>
+        </div>
+
+        <div *ngIf="products().length > 0" class="table-glass-wrapper">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Categoría</th>
+                <th>Código Barras</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Stock Min.</th>
+                <th>Estado</th>
+                <th *ngIf="userRole() === 'ROLE_ADMIN'" class="actions-col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of products()" [class.row-critical-alert]="item.stock <= (item.stockMinimo || 5)">
+                <td class="img-cell">
+                  <img 
+                    [src]="item.imagenUrl || 'https://images.unsplash.com/photo-1556229010-aa3f7ff66b24?auto=format&fit=crop&q=80&w=100'" 
+                    class="product-thumb" 
+                    alt="Skin"
+                    onerror="this.src='https://images.unsplash.com/photo-1556229010-aa3f7ff66b24?auto=format&fit=crop&q=80&w=100'"
+                  >
+                </td>
+                <td class="name-cell">
+                  <strong>{{ item.nombre }}</strong>
+                </td>
+                <td class="desc-cell" title="{{ item.descripcion }}">{{ item.descripcion || 'Sin descripción' }}</td>
+                <td>
+                  <span class="category-pill pill-{{ item.idCategoria }}">
+                    {{ getCategoryName(item.idCategoria) }}
+                  </span>
+                </td>
+                <td class="barcode-cell font-mono">{{ item.codigoBarras || '-' }}</td>
+                <td class="price-cell">S/ {{ item.precio | number:'1.2-2' }}</td>
+                <td class="stock-cell">
+                  <strong>{{ item.stock }}</strong> uds
+                </td>
+                <td>{{ item.stockMinimo || 5 }} uds</td>
+                <td>
+                  <span class="status-pill" [ngClass]="{
+                    'status-ok': item.stock > (item.stockMinimo || 5),
+                    'status-warning': item.stock <= (item.stockMinimo || 5) && item.stock > 0,
+                    'status-danger': item.stock === 0
+                  }">
+                    {{ item.stock > (item.stockMinimo || 5) ? 'Suficiente' : (item.stock > 0 ? 'Stock Crítico' : 'Agotado') }}
+                  </span>
+                </td>
+                <td *ngIf="userRole() === 'ROLE_ADMIN'" class="actions-cell">
+                  <button class="btn-table-edit" (click)="openEditModal(item)" title="Editar">✏️</button>
+                  <button class="btn-table-delete" (click)="item.id !== undefined && openDeleteModal(item.id)" title="Eliminar">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: KÁRDEX / STOCK MOVEMENTS -->
+      <div *ngIf="activeTab() === 'kardex'" class="tab-pane fade-in">
+        <div class="toolbar-section">
+          <!-- Filter by Product -->
+          <div class="filter-box">
+            <label for="filter-prod">Filtrar por Producto: </label>
+            <select id="filter-prod" class="form-select-inline" (change)="filterKardexByProduct($event)">
+              <option value="">-- Todos los Productos --</option>
+              <option *ngFor="let p of products()" [value]="p.id">{{ p.nombre }} (ID: {{ p.id }})</option>
+            </select>
+          </div>
+          
+          <button class="btn-primary-action" (click)="openKardexModal()">
+            ＋ Registrar Ajuste Manual
+          </button>
+        </div>
+
+        <div *ngIf="kardexMovements().length === 0" class="empty-state-card">
+          <span class="empty-icon">📈</span>
+          <h3>No hay registros de movimientos en el Kárdex</h3>
+          <p>Registre un ajuste manual o reciba una orden de compra para auditar stock.</p>
+        </div>
+
+        <!-- Kardex Table -->
+        <div *ngIf="kardexMovements().length > 0" class="table-glass-wrapper">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Movimiento</th>
+                <th>Cantidad</th>
+                <th>Stock Ant.</th>
+                <th>Stock Post.</th>
+                <th>Justificación</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let k of kardexMovements()">
+                <td>#{{ k.id }}</td>
+                <td class="font-mono">{{ k.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <strong>{{ getProductName(k.idProducto) }}</strong>
+                  <span class="txt-sub"> (ID: {{ k.idProducto }})</span>
+                </td>
+                <td>
+                  <span class="movement-pill" [ngClass]="{
+                    'mov-entrada': k.tipoMovimiento === 'ENTRADA',
+                    'mov-salida': k.tipoMovimiento === 'SALIDA',
+                    'mov-ajuste': k.tipoMovimiento === 'AJUSTE'
+                  }">
+                    {{ k.tipoMovimiento }}
+                  </span>
+                </td>
+                <td><strong>{{ k.cantidad }}</strong> uds</td>
+                <td>{{ k.stockAnterior }}</td>
+                <td><strong>{{ k.stockPosterior }}</strong></td>
+                <td class="justif-cell" title="{{ k.justificacion }}">{{ k.justificacion }}</td>
+                <td>User #{{ k.idUsuario }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: PROVEEDORES & OC -->
+      <div *ngIf="activeTab() === 'providers'" class="tab-pane fade-in">
+        <!-- Sub-navigation Tabs -->
+        <div class="sub-tab-nav">
+          <button class="sub-tab-btn" [class.active]="activeProviderSubTab() === 'list'" (click)="activeProviderSubTab.set('list')">
+            Lista de Proveedores
+          </button>
+          <button class="sub-tab-btn" [class.active]="activeProviderSubTab() === 'orders'" (click)="activeProviderSubTab.set('orders')">
+            Órdenes de Compra (Reabastecimiento)
+          </button>
+        </div>
+
+        <!-- Subtab A: Proveedores CRUD -->
+        <div *ngIf="activeProviderSubTab() === 'list'" class="subtab-pane">
+          <div class="toolbar-section">
+            <div></div>
+            <button class="btn-primary-action" (click)="openProveedorCreateModal()">
+              ＋ Registrar Proveedor
+            </button>
+          </div>
+
+          <div *ngIf="proveedores().length === 0" class="empty-state-card">
+            <span class="empty-icon">🤝</span>
+            <h3>No hay proveedores registrados</h3>
+            <p>Comience registrando un proveedor para realizar órdenes de compra.</p>
+          </div>
+
+          <div *ngIf="proveedores().length > 0" class="table-glass-wrapper">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre / Razón Social</th>
+                  <th>RUC</th>
+                  <th>Dirección</th>
+                  <th>Teléfono</th>
+                  <th>Email</th>
+                  <th class="actions-col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of proveedores()">
+                  <td>#{{ p.id }}</td>
+                  <td><strong>{{ p.nombre }}</strong></td>
+                  <td class="font-mono">{{ p.ruc }}</td>
+                  <td>{{ p.direccion || '-' }}</td>
+                  <td>{{ p.telefono || '-' }}</td>
+                  <td>{{ p.email || '-' }}</td>
+                  <td class="actions-cell">
+                    <button class="btn-table-edit" (click)="openProveedorEditModal(p)" title="Editar">✏️</button>
+                    <button class="btn-table-delete" (click)="p.id !== undefined && deleteProveedor(p.id)" title="Eliminar">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Subtab B: Ordenes de Compra -->
+        <div *ngIf="activeProviderSubTab() === 'orders'" class="subtab-pane">
+          <div class="toolbar-section">
+            <div></div>
+            <button class="btn-primary-action" (click)="openOrderCreateModal()">
+              ＋ Crear Orden de Compra
+            </button>
+          </div>
+
+          <div *ngIf="ordenesCompra().length === 0" class="empty-state-card">
+            <span class="empty-icon">📝</span>
+            <h3>No hay órdenes de compra registradas</h3>
+            <p>Cree una nueva orden de compra para abastecer inventario de productos.</p>
+          </div>
+
+          <div *ngIf="ordenesCompra().length > 0" class="table-glass-wrapper">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>N° Orden</th>
+                  <th>Proveedor</th>
+                  <th>Fecha Creación</th>
+                  <th>Fecha Recepción</th>
+                  <th>Estado</th>
+                  <th>Total Importe</th>
+                  <th class="actions-col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let o of ordenesCompra()">
+                  <td class="font-mono"><strong>#OC-{{ o.id }}</strong></td>
+                  <td>{{ getProviderName(o.idProveedor) }}</td>
+                  <td>{{ o.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ o.fechaRecepcion ? (o.fechaRecepcion | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</td>
+                  <td>
+                    <span class="status-pill" [ngClass]="{
+                      'status-warning': o.estado === 'PENDIENTE',
+                      'status-ok': o.estado === 'RECIBIDA'
+                    }">
+                      {{ o.estado }}
+                    </span>
+                  </td>
+                  <td><strong>S/ {{ o.total | number:'1.2-2' }}</strong></td>
+                  <td class="actions-cell">
+                    <button class="btn-details-action" (click)="viewOrderDetails(o)" title="Ver Detalles">👁️ Ver</button>
+                    <button 
+                      *ngIf="o.estado === 'PENDIENTE'" 
+                      class="btn-receive-action" 
+                      (click)="o.id !== undefined && receiveOrder(o.id)" 
+                      title="Confirmar Recepción de Stock"
+                    >
+                      📥 Recibir
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: REPORTES Y ALERTAS -->
+      <div *ngIf="activeTab() === 'reports'" class="tab-pane fade-in">
+        <!-- Cards Summary Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card glass-card">
+            <div class="metric-icon">💰</div>
+            <div class="metric-info">
+              <span class="metric-title">Valorización de Inventario</span>
+              <h3 class="metric-value">S/ {{ calculateValuation() | number:'1.2-2' }}</h3>
+              <span class="metric-sub">Suma de: stock * precio de venta</span>
+            </div>
+          </div>
+          
+          <div class="metric-card glass-card">
+            <div class="metric-icon">📦</div>
+            <div class="metric-info">
+              <span class="metric-title">Unidades Totales</span>
+              <h3 class="metric-value">{{ calculateTotalUnits() | number }}</h3>
+              <span class="metric-sub">Suma total de unidades físicas en stock</span>
+            </div>
+          </div>
+
+          <div class="metric-card glass-card" [class.alert-card-danger]="lowStockProducts().length > 0">
+            <div class="metric-icon">🚨</div>
+            <div class="metric-info">
+              <span class="metric-title">Productos en Stock Crítico</span>
+              <h3 class="metric-value">{{ lowStockProducts().length }}</h3>
+              <span class="metric-sub">Productos iguales o menores a su stock mínimo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Low Stock Alert Panel Details -->
+        <div class="alerts-details-container glass-card">
+          <div class="alerts-header">
+            <h3>Lista detallada de Alertas de Reposición</h3>
+            <span *ngIf="lowStockProducts().length > 0" class="blink-badge">REPOSICIÓN REQUERIDA</span>
+          </div>
+
+          <div *ngIf="lowStockProducts().length === 0" class="no-alerts-card">
+            <span class="success-icon">✓</span>
+            <h4>¡Excelente!</h4>
+            <p>Todos los protectores solares se encuentran por encima de sus límites de stock mínimo establecidos.</p>
+          </div>
+
+          <div *ngIf="lowStockProducts().length > 0" class="alerts-list">
+            <div *ngFor="let p of lowStockProducts()" class="alert-item-card">
+              <div class="alert-item-left">
+                <span class="alert-warning-triangle">⚠</span>
+                <div class="alert-item-info">
+                  <strong>{{ p.nombre }}</strong>
+                  <span class="txt-sub">Categoría: {{ getCategoryName(p.idCategoria) }} | Código de Barras: {{ p.codigoBarras || '-' }}</span>
+                </div>
+              </div>
+              <div class="alert-item-right">
+                <div class="alert-stocks">
+                  <span class="current-alert-stock">Stock: <strong>{{ p.stock }}</strong> uds</span>
+                  <span class="min-alert-stock">Mínimo: {{ p.stockMinimo || 5 }} uds</span>
+                </div>
+                <span class="shortage-badge">Déficit: -{{ (p.stockMinimo || 5) - p.stock }} uds</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODALS SECTION ==================== -->
+
+<!-- Modal 1: Crear/Editar Producto -->
+<div class="modal-backdrop" *ngIf="isModalOpen()" (click)="closeModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEditMode() ? 'Editar Producto' : 'Registrar Nuevo Producto en Catálogo' }}</h3>
+      <button class="close-modal" (click)="closeModal()">&times;</button>
+    </div>
+    
+    <form (submit)="saveProduct()" #productForm="ngForm" novalidate>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="prod-name">Nombre del Producto</label>
+          <input
+            type="text"
+            id="prod-name"
+            name="nombre"
+            [(ngModel)]="selectedProduct.nombre"
+            required
+            minlength="3"
+            maxlength="100"
+            placeholder="Ej. Protector Solar FPS 50+ Facial"
+            #nameInput="ngModel"
+            [class.is-invalid]="nameInput.touched && nameInput.invalid"
+          >
+          <div *ngIf="nameInput.touched && nameInput.invalid" class="validation-error">
+            El nombre debe tener al menos 3 caracteres.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="prod-desc">Descripción</label>
+          <textarea
+            id="prod-desc"
+            name="descripcion"
+            [(ngModel)]="selectedProduct.descripcion"
+            maxlength="200"
+            placeholder="Especificaciones (Toque seco, hidratación, pediatra, etc.)"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="prod-price">Precio Unitario (S/)</label>
+            <input
+              type="number"
+              id="prod-price"
+              name="precio"
+              [(ngModel)]="selectedProduct.precio"
+              required
+              min="0.01"
+              step="0.01"
+              placeholder="0.00"
+              #priceInput="ngModel"
+              [class.is-invalid]="priceInput.touched && priceInput.invalid"
+            >
+            <div *ngIf="priceInput.touched && priceInput.invalid" class="validation-error">
+              Precio obligatorio mayor a 0.
+            </div>
+          </div>
+
+          <div class="form-group half">
+            <label for="prod-stock">Stock actual</label>
+            <input
+              type="number"
+              id="prod-stock"
+              name="stock"
+              [(ngModel)]="selectedProduct.stock"
+              required
+              min="0"
+              step="1"
+              [disabled]="isEditMode()"
+              placeholder="0"
+              #stockInput="ngModel"
+              [class.is-invalid]="stockInput.touched && stockInput.invalid"
+            >
+            <div *ngIf="stockInput.touched && stockInput.invalid" class="validation-error">
+              Stock inicial no puede ser negativo.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="prod-stock-min">Stock Mínimo Alerta</label>
+            <input
+              type="number"
+              id="prod-stock-min"
+              name="stockMinimo"
+              [(ngModel)]="selectedProduct.stockMinimo"
+              required
+              min="1"
+              step="1"
+              placeholder="5"
+            >
+          </div>
+
+          <div class="form-group half">
+            <label for="prod-category">Categoría</label>
+            <select
+              id="prod-category"
+              name="idCategoria"
+              [(ngModel)]="selectedProduct.idCategoria"
+              required
+            >
+              <option *ngFor="let cat of categories | keyvalue" [value]="cat.key">
+                {{ cat.value }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="prod-barcode">Código de Barras</label>
+          <div class="input-with-action">
+            <input
+              type="text"
+              id="prod-barcode"
+              name="codigoBarras"
+              [(ngModel)]="selectedProduct.codigoBarras"
+              placeholder="Escriba o escanee un código de barras"
+            >
+            <button type="button" class="btn-inner-scan" (click)="openScanner('product_form')">
+              📷 Escanear
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Imagen del Producto</label>
+          <div class="image-upload-actions">
+            <label class="btn-secondary-action image-upload-button">
+              Subir archivo
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onProductImageSelected($event)">
+            </label>
+            <button type="button" class="btn-secondary-action" (click)="openProductCamera()">Tomar foto</button>
+            <button *ngIf="selectedProduct.imagenUrl" type="button" class="btn-remove-image" (click)="removeProductImage()">
+              Quitar imagen
+            </button>
+          </div>
+          <span class="image-upload-help">Formatos permitidos: JPG, PNG, WEBP o GIF. Máximo 5 MB.</span>
+          <span *ngIf="isUploadingImage()" class="image-upload-status">Subiendo imagen...</span>
+          <span *ngIf="imageUploadError()" class="validation-error">{{ imageUploadError() }}</span>
+          <div *ngIf="selectedProduct.imagenUrl" class="image-preview-box">
+            <img [src]="selectedProduct.imagenUrl" class="modal-preview-img" alt="Preview">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn-save" [disabled]="productForm.invalid || isLoading() || isUploadingImage()">
+          {{ isEditMode() ? 'Actualizar' : 'Guardar Producto' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Cámara para fotografía de producto -->
+<div class="modal-backdrop camera-backdrop" *ngIf="isProductCameraOpen()" (click)="closeProductCamera()">
+  <div class="modal-card product-camera-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Tomar Foto del Producto</h3>
+      <button type="button" class="close-modal" (click)="closeProductCamera()">&times;</button>
+    </div>
+    <video id="product-camera-video" class="product-camera-video" autoplay playsinline muted></video>
+    <div *ngIf="productCameraError()" class="validation-error camera-error">{{ productCameraError() }}</div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeProductCamera()">Cancelar</button>
+      <button type="button" class="btn-save" (click)="captureProductPhoto()" [disabled]="!!productCameraError()">
+        Capturar Foto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Registrar Movimiento Kárdex manual -->
+<div class="modal-backdrop" *ngIf="isKardexModalOpen()" (click)="closeKardexModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Registrar Ajuste Manual de Inventario (Kárdex)</h3>
+      <button class="close-modal" (click)="closeKardexModal()">&times;</button>
+    </div>
+    
+    <form (submit)="saveKardexMovement()" #kardexForm="ngForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="k-product">Producto</label>
+          <select id="k-product" name="idProducto" [(ngModel)]="selectedKardex.idProducto" required class="form-select-full">
+            <option *ngFor="let p of products()" [value]="p.id">{{ p.nombre }} (ID: {{ p.id }} - Stock actual: {{ p.stock }})</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="k-type">Tipo de Ajuste</label>
+            <select id="k-type" name="tipoMovimiento" [(ngModel)]="selectedKardex.tipoMovimiento" required>
+              <option value="ENTRADA">ENTRADA (Aumentar Stock)</option>
+              <option value="SALIDA">SALIDA (Disminuir Stock)</option>
+              <option value="AJUSTE">AJUSTE (Corrección)</option>
+            </select>
+          </div>
+
+          <div class="form-group half">
+            <label for="k-quantity">Cantidad de unidades</label>
+            <input 
+              type="number" 
+              id="k-quantity" 
+              name="cantidad" 
+              [(ngModel)]="selectedKardex.cantidad" 
+              required 
+              min="1" 
+              step="1"
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="k-barcode-scan">Escanear código de barras para seleccionar</label>
+          <button type="button" class="btn-inner-scan w-100" (click)="openScanner('kardex_form')">
+            📷 Escanear con cámara
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="k-justification">Justificación / Motivo</label>
+          <input 
+            type="text" 
+            id="k-justification" 
+            name="justificacion" 
+            [(ngModel)]="selectedKardex.justificacion" 
+            required 
+            minlength="5"
+            placeholder="Ej. Devolución de cliente, rotura, regularización stock"
+            #justifInput="ngModel"
+            [class.is-invalid]="justifInput.touched && justifInput.invalid"
+          >
+          <div *ngIf="justifInput.touched && justifInput.invalid" class="validation-error">
+            Justificación obligatoria (mínimo 5 caracteres).
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeKardexModal()">Cancelar</button>
+        <button type="submit" class="btn-save" [disabled]="kardexForm.invalid || isLoading()">Registrar Ajuste</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 3: Crear/Editar Proveedor -->
+<div class="modal-backdrop" *ngIf="isProveedorModalOpen()" (click)="closeProveedorModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isProveedorEditMode() ? 'Editar Proveedor' : 'Registrar Nuevo Proveedor' }}</h3>
+      <button class="close-modal" (click)="closeProveedorModal()">&times;</button>
+    </div>
+    
+    <form (submit)="saveProveedor()" #provForm="ngForm" novalidate>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="p-name">Nombre / Razón Social</label>
+          <input
+            type="text"
+            id="p-name"
+            name="nombre"
+            [(ngModel)]="selectedProveedor.nombre"
+            required
+            placeholder="Ej. Distribuidora Skincare Perú S.A.C."
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="p-ruc">RUC (11 dígitos)</label>
+          <input
+            type="text"
+            id="p-ruc"
+            name="ruc"
+            [(ngModel)]="selectedProveedor.ruc"
+            required
+            minlength="11"
+            maxlength="11"
+            pattern="[0-9]{11}"
+            placeholder="RUC de 11 números"
+            #rucVal="ngModel"
+            [class.is-invalid]="rucVal.touched && rucVal.invalid"
+          >
+          <div *ngIf="rucVal.touched && rucVal.invalid" class="validation-error">
+            RUC debe ser un número de exactamente 11 dígitos.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="p-dir">Dirección</label>
+          <input
+            type="text"
+            id="p-dir"
+            name="direccion"
+            [(ngModel)]="selectedProveedor.direccion"
+            placeholder="Av. Las Flores 123, San Isidro"
+          >
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="p-tel">Teléfono</label>
+            <input
+              type="text"
+              id="p-tel"
+              name="telefono"
+              [(ngModel)]="selectedProveedor.telefono"
+              placeholder="999888777"
+            >
+          </div>
+
+          <div class="form-group half">
+            <label for="p-email">Correo Electrónico</label>
+            <input
+              type="email"
+              id="p-email"
+              name="email"
+              [(ngModel)]="selectedProveedor.email"
+              placeholder="ventas@proveedor.com"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeProveedorModal()">Cancelar</button>
+        <button type="submit" class="btn-save" [disabled]="provForm.invalid || isLoading()">
+          {{ isProveedorEditMode() ? 'Actualizar' : 'Registrar Proveedor' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 4: Crear Orden de Compra (Reabastecimiento) -->
+<div class="modal-backdrop" *ngIf="isOrderModalOpen()" (click)="closeOrderModal()">
+  <div class="modal-card modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Crear Nueva Orden de Compra</h3>
+      <button class="close-modal" (click)="closeOrderModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="order-provider">Seleccione Proveedor</label>
+        <select id="order-provider" [(ngModel)]="selectedProviderId" class="form-select-full">
+          <option *ngFor="let p of proveedores()" [value]="p.id">{{ p.nombre }} (RUC: {{ p.ruc }})</option>
+        </select>
+      </div>
+
+      <div class="order-items-builder">
+        <div class="builder-header">
+          <h4>Detalles de la Compra</h4>
+          <button class="btn-add-item" (click)="addOrderItem()">＋ Agregar Fila</button>
+        </div>
+
+        <div *ngIf="orderItems.length === 0" class="no-items-warning">
+          Agregue al menos un producto a comprar.
+        </div>
+
+        <div *ngFor="let item of orderItems; let i = index" class="builder-row">
+          <!-- Product Selection -->
+          <div class="builder-col prod-col">
+            <label>Producto</label>
+            <select [(ngModel)]="item.idProducto" class="form-select">
+              <option *ngFor="let p of products()" [value]="p.id">{{ p.nombre }} (Stock: {{ p.stock }})</option>
+            </select>
+          </div>
+
+          <!-- Quantity -->
+          <div class="builder-col qty-col">
+            <label>Cantidad</label>
+            <input type="number" [(ngModel)]="item.cantidad" min="1" step="1" class="form-control">
+          </div>
+
+          <!-- Unit Price -->
+          <div class="builder-col price-col">
+            <label>Costo Unitario (S/)</label>
+            <input type="number" [(ngModel)]="item.precioUnitario" min="0.01" step="0.01" class="form-control">
+          </div>
+
+          <!-- Subtotal display -->
+          <div class="builder-col sub-col">
+            <label>Subtotal</label>
+            <span class="subtotal-val">S/ {{ item.cantidad * item.precioUnitario | number:'1.2-2' }}</span>
+          </div>
+
+          <!-- Remove row button -->
+          <div class="builder-col del-col">
+            <button class="btn-row-remove" (click)="removeOrderItem(i)">&times;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-summary-box">
+        <span class="total-label">Total a Pagar:</span>
+        <span class="total-value">S/ {{ calculateOrderTotal() | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeOrderModal()">Cancelar</button>
+      <button type="button" class="btn-save" (click)="savePurchaseOrder()" [disabled]="isLoading() || orderItems.length === 0">
+        Crear y Guardar Orden
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 5: Ver Detalles de Orden de Compra -->
+<div class="modal-backdrop" *ngIf="isOrderDetailsModalOpen()" (click)="closeOrderDetailsModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Detalles de la Orden de Compra</h3>
+      <button class="close-modal" (click)="closeOrderDetailsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedOrder">
+      <div class="order-info-grid">
+        <p><strong>N° Orden:</strong> #OC-{{ selectedOrder.id }}</p>
+        <p><strong>Proveedor:</strong> {{ getProviderName(selectedOrder.idProveedor) }}</p>
+        <p><strong>Fecha Creación:</strong> {{ selectedOrder.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+        <p><strong>Estado:</strong> <span class="badge">{{ selectedOrder.estado }}</span></p>
+        <p *ngIf="selectedOrder.fechaRecepcion"><strong>Fecha Recepción:</strong> {{ selectedOrder.fechaRecepcion | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+
+      <hr class="modal-divider">
+
+      <div class="table-glass-wrapper">
+        <table class="dashboard-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Costo Unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let det of selectedOrderDetails">
+              <td><strong>{{ getProductName(det.idProducto) }}</strong></td>
+              <td>{{ det.cantidad }} uds</td>
+              <td>S/ {{ det.precioUnitario | number:'1.2-2' }}</td>
+              <td><strong>S/ {{ det.cantidad * det.precioUnitario | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="order-summary-box">
+        <span class="total-label">Total de la Orden:</span>
+        <span class="total-value">S/ {{ selectedOrder.total | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeOrderDetailsModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 6: Webcam Barcode Scanner Overlay -->
+<div class="modal-backdrop scanner-backdrop" *ngIf="isScannerOpen()" (click)="closeScanner()">
+  <div class="modal-card scanner-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Lector de Códigos de Barra</h3>
+      <button class="close-modal" (click)="closeScanner()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="scanner-container">
+        <!-- Error scanner message -->
+        <div *ngIf="scannerErrorMessage()" class="scanner-error">
+          {{ scannerErrorMessage() }}
+        </div>
+        <!-- html5-qrcode reader target element -->
+        <div id="scanner-reader" style="width: 100%; min-height: 250px;"></div>
+      </div>
+      <p class="scanner-hint">Enfoque el código de barras del protector solar frente a su webcam o cámara del celular.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeScanner()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 7: Confirmación de Eliminación de Producto -->
+<div class="modal-backdrop delete-backdrop" *ngIf="isDeleteModalOpen()" (click)="closeDeleteModal()">
+  <div class="modal-card delete-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Confirmar Eliminación</h3>
+      <button class="close-modal" (click)="closeDeleteModal()">&times;</button>
+    </div>
+    <div class="modal-body text-center">
+      <div class="warning-icon">⚠️</div>
+      <p>¿Estás seguro de que deseas eliminar este producto del inventario?</p>
+      <p class="warning-text">Esta acción no se puede deshacer y se eliminará permanentemente de la base de datos.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeDeleteModal()">Cancelar</button>
+      <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="isLoading()">
+        Eliminar Producto
+      </button>
+    </div>
+  </div>
+</div>
