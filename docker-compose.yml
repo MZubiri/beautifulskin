@@ -1,6 +1,8 @@
 services:
   mysql:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configure MYSQL_ROOT_PASSWORD}
@@ -8,7 +10,6 @@ services:
       TZ: America/Lima
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./RayosUV_db.sql:/docker-entrypoint-initdb.d/01-RayosUV_db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s

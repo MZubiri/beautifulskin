@@ -69,6 +69,10 @@ Los volúmenes `mysql-data` y `product-images` conservan la base de datos y las
 imágenes entre despliegues. Para reconstruir los datos demo hay que eliminar
 deliberadamente el volumen `mysql-data` antes de desplegar otra vez.
 
+El script SQL se incluye dentro de la imagen MySQL mediante `Dockerfile.mysql`.
+Esto permite que la inicialización funcione también cuando Coolify construye el
+Compose sin conservar archivos relativos como montajes bind.
+
 En Oracle Cloud, la instancia debe cumplir los requisitos de Coolify, tener
 Docker disponible y permitir conexiones SSH, HTTP y HTTPS en sus reglas de red.
 
