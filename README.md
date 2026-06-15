@@ -73,6 +73,10 @@ El script SQL se incluye dentro de la imagen MySQL mediante `Dockerfile.mysql`.
 Esto permite que la inicialización funcione también cuando Coolify construye el
 Compose sin conservar archivos relativos como montajes bind.
 
+El servicio interno `db-seed` también asegura los usuarios demo en cada
+despliegue. Es idempotente: repara `Admin/admin` y
+`trabajador1/trabajador` sin borrar los demás usuarios ni datos existentes.
+
 En Oracle Cloud, la instancia debe cumplir los requisitos de Coolify, tener
 Docker disponible y permitir conexiones SSH, HTTP y HTTPS en sus reglas de red.
 

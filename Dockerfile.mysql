@@ -1,3 +1,4 @@
 FROM mysql:8.0
 
 COPY RayosUV_db.sql /docker-entrypoint-initdb.d/01-RayosUV_db.sql
+COPY ensure-demo-users.sql /opt/beautifulskin/ensure-demo-users.sql

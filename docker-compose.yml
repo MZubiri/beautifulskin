@@ -16,6 +16,24 @@ services:
       timeout: 5s
       retries: 15
 
+  db-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configure MYSQL_ROOT_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until mysql -hmysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "SELECT 1" >/dev/null 2>&1; do
+          sleep 2
+        done
+        mysql -hmysql -uroot -p"$$MYSQL_ROOT_PASSWORD" < /opt/beautifulskin/ensure-demo-users.sql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   eureka:
     build:
       context: .
@@ -43,8 +61,8 @@ services:
       APP_JWT_SECRET: ${JWT_SECRET:?Configure JWT_SECRET}
       TZ: America/Lima
     depends_on:
-      mysql:
-        condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
       eureka:
         condition: service_started
 
@@ -65,8 +83,8 @@ services:
         aliases:
           - productos-service
     depends_on:
-      mysql:
-        condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
       eureka:
         condition: service_started
 
@@ -83,8 +101,8 @@ services:
         aliases:
           - kardex-service
     depends_on:
-      mysql:
-        condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
       eureka:
         condition: service_started
 
@@ -97,8 +115,8 @@ services:
     restart: unless-stopped
     environment: *service-environment
     depends_on:
-      mysql:
-        condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
       eureka:
         condition: service_started
 
