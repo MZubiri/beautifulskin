@@ -109,7 +109,9 @@ public class OrdenCompraService {
             movement.put("tipoMovimiento", "ENTRADA");
             movement.put("cantidad", detalle.getCantidad());
             movement.put("justificacion", "Reabastecimiento: Ingreso por Orden de Compra N° " + idOrden);
-            movement.put("idUsuario", idUsuario != null ? idUsuario : 1); // default admin ID = 1
+            if (idUsuario != null) {
+                movement.put("idUsuario", idUsuario);
+            }
 
             try {
                 restTemplate.postForObject(kardexServiceUri + "/api/kardex/registrar", authorizedEntity(movement), Map.class);

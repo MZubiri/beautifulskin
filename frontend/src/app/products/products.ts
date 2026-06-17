@@ -591,7 +591,7 @@ export class Products implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        alert('Error al recibir la orden de compra: ' + (err.error || err.message));
+        alert('Error al recibir la orden de compra: ' + this.getErrorMessage(err, err.message || 'No se pudo recibir la orden.'));
       }
     });
   }
@@ -609,7 +609,16 @@ export class Products implements OnInit {
     if (typeof error?.error === 'string' && error.error.trim()) {
       return error.error;
     }
-    return error?.error?.message || fallback;
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+    if (error?.error) {
+      return JSON.stringify(error.error);
+    }
+    return fallback;
   }
 
   // ---- 5. Barcode Scanner Controls ----
