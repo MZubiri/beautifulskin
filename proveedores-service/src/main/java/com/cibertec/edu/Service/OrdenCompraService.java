@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -111,6 +113,13 @@ public class OrdenCompraService {
 
             try {
                 restTemplate.postForObject(kardexServiceUri + "/api/kardex/registrar", authorizedEntity(movement), Map.class);
+            } catch (HttpStatusCodeException e) {
+                String response = e.getResponseBodyAsString();
+                String detail = response == null || response.isBlank() ? e.getStatusCode().toString() : response;
+                throw new IllegalArgumentException("No se pudo actualizar el kárdex para el producto "
+                        + detalle.getIdProducto() + ": " + detail);
+            } catch (ResourceAccessException e) {
+                throw new IllegalArgumentException("No se pudo conectar con el servicio de kárdex. Intente nuevamente en unos segundos.");
             } catch (Exception e) {
                 throw new IllegalArgumentException("No se pudo actualizar el kárdex para el producto "
                         + detalle.getIdProducto() + ". Intente nuevamente en unos segundos.");

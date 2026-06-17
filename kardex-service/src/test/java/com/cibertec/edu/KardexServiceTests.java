@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,13 +18,17 @@ import com.cibertec.edu.Service.KardexService;
 class KardexServiceTests {
     private IKardexRepository repository;
     private RestTemplate restTemplate;
+    private JdbcTemplate jdbcTemplate;
     private KardexService service;
 
     @BeforeEach
     void setUp() {
         repository = mock(IKardexRepository.class);
         restTemplate = mock(RestTemplate.class);
-        service = new KardexService(repository, restTemplate, "http://productos-service");
+        jdbcTemplate = mock(JdbcTemplate.class);
+        service = new KardexService(repository, restTemplate, jdbcTemplate, "http://productos-service");
+        when(jdbcTemplate.queryForObject(eq("SELECT COUNT(*) FROM authusuario WHERE id = ?"), eq(Integer.class), eq(1)))
+                .thenReturn(1);
         when(restTemplate.exchange(contains("/api/productos/1"), eq(org.springframework.http.HttpMethod.GET), any(), eq(Map.class)))
                 .thenReturn(ResponseEntity.ok(Map.of("stock", 10)));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

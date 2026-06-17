@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
@@ -23,13 +27,16 @@ public class KardexService {
 
     private final IKardexRepository kardexRepository;
     private final RestTemplate restTemplate;
+    private final JdbcTemplate jdbcTemplate;
     private final String productosServiceUri;
 
     public KardexService(IKardexRepository kardexRepository,
                          RestTemplate restTemplate,
+                         JdbcTemplate jdbcTemplate,
                          @Value("${app.services.productos-uri:http://localhost:8081}") String productosServiceUri) {
         this.kardexRepository = kardexRepository;
         this.restTemplate = restTemplate;
+        this.jdbcTemplate = jdbcTemplate;
         this.productosServiceUri = productosServiceUri;
     }
 
@@ -107,9 +114,63 @@ public class KardexService {
         }
 
         // Save Kardex entry
+        movimiento.setIdUsuario(resolveUsuarioId(movimiento.getIdUsuario()));
         movimiento.setStockAnterior(stockAnterior);
         movimiento.setStockPosterior(stockPosterior);
         return kardexRepository.save(movimiento);
+    }
+
+    private Integer resolveUsuarioId(Integer requestedId) {
+        if (usuarioExists(requestedId)) {
+            return requestedId;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            Integer tokenUserId = findUsuarioIdByUsername(authentication.getName());
+            if (tokenUserId != null) {
+                return tokenUserId;
+            }
+        }
+
+        Integer firstUserId = findFirstUsuarioId();
+        if (firstUserId != null) {
+            return firstUserId;
+        }
+
+        throw new IllegalArgumentException("No existe un usuario válido para registrar el movimiento de kárdex.");
+    }
+
+    private boolean usuarioExists(Integer idUsuario) {
+        if (idUsuario == null) {
+            return false;
+        }
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM authusuario WHERE id = ?",
+                Integer.class,
+                idUsuario);
+        return count != null && count > 0;
+    }
+
+    private Integer findUsuarioIdByUsername(String username) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id FROM authusuario WHERE username = ? ORDER BY id LIMIT 1",
+                    Integer.class,
+                    username);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    private Integer findFirstUsuarioId() {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id FROM authusuario ORDER BY id LIMIT 1",
+                    Integer.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private HttpEntity<?> authorizedEntity(Object body) {
