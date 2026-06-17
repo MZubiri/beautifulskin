@@ -46,7 +46,8 @@ export class Products implements OnInit {
     2: 'Niñas',
     3: 'Mujer',
     4: 'Hombre',
-    5: 'Accesorios'
+    5: 'Accesorios',
+    6: 'Unisex'
   };
 
   // Modals state
@@ -719,6 +720,8 @@ export class Products implements OnInit {
 
   // ---- 6. Excel Import & Export ----
   exportToExcel(): void {
+    const exportedAt = new Date();
+    const exportedAtText = this.formatDateTime(exportedAt);
     const exportData = this.products().map(p => ({
       ID: p.id,
       Nombre: p.nombre,
@@ -728,13 +731,22 @@ export class Products implements OnInit {
       'Stock Mínimo': p.stockMinimo || 5,
       'Código de Barras': p.codigoBarras || '',
       'URL Imagen': p.imagenUrl || '',
-      Categoría: this.getCategoryName(p.idCategoria)
+      Categoría: this.getCategoryName(p.idCategoria),
+      'Exportado en': exportedAtText
     }));
 
+    const summaryData = [
+      { Campo: 'Exportado en', Valor: exportedAtText },
+      { Campo: 'Total productos', Valor: this.products().length },
+      { Campo: 'Usuario', Valor: this.username() || '-' }
+    ];
+
     const ws = XLSX.utils.json_to_sheet(exportData);
+    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
     const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Resumen');
     XLSX.utils.book_append_sheet(wb, ws, 'Productos');
-    XLSX.writeFile(wb, 'Catalogo_BeautifulSkin_Inventario.xlsx');
+    XLSX.writeFile(wb, `Catalogo_BeautifulSkin_Inventario_${this.formatDateTimeForFile(exportedAt)}.xlsx`);
   }
 
   importFromExcel(event: any): void {
@@ -763,7 +775,7 @@ export class Products implements OnInit {
           descripcion: row['Descripción'] || row['descripcion'] || '',
           precio: parseFloat(row['Precio'] || row['precio'] || '0.0'),
           stock: parseInt(row['Stock'] || row['stock'] || '0'),
-          idCategoria: parseInt(row['Categoría ID'] || row['categoria_id'] || '5'),
+          idCategoria: this.parseCategoryFromExcel(row),
           stockMinimo: parseInt(row['Stock Mínimo'] || row['stock_minimo'] || '5'),
           codigoBarras: row['Código de Barras'] || row['codigo_barras'] ? String(row['Código de Barras'] || row['codigo_barras']) : '',
           imagenUrl: row['URL Imagen'] || row['imagen_url'] || ''
@@ -820,6 +832,34 @@ export class Products implements OnInit {
   // ---- Helper UI Methods ----
   getCategoryName(id: number): string {
     return this.categories[id] || 'Accesorios';
+  }
+
+  private parseCategoryFromExcel(row: any): number {
+    const rawId = row['Categoría ID'] || row['categoria_id'];
+    if (rawId) {
+      return parseInt(rawId, 10);
+    }
+    const rawName = String(row['Categoría'] || row['categoria'] || '').trim().toLowerCase();
+    const found = Object.entries(this.categories)
+      .find(([, name]) => name.toLowerCase() === rawName);
+    return found ? Number(found[0]) : 5;
+  }
+
+  private formatDateTime(date: Date): string {
+    return new Intl.DateTimeFormat('es-PE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
+  }
+
+  private formatDateTimeForFile(date: Date): string {
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
   }
 
   getProviderName(id: number): string {

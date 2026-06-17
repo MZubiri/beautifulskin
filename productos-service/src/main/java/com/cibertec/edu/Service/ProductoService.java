@@ -19,11 +19,11 @@ public class ProductoService {
 	}
 
 	public List<Producto> getAllProductos() {
-		return productoRepository.findAll();
+		return productoRepository.findByActivoTrue();
 	}
   
 	public Optional<Producto> getProductoById(Long id) {
-		return productoRepository.findById(id);
+		return productoRepository.findByIdAndActivoTrue(id);
 	} 
   
 	public Producto saveProducto(Producto producto) {
@@ -39,15 +39,19 @@ public class ProductoService {
 		if (producto.getStockMinimo() == null || producto.getStockMinimo() < 0) {
 			throw new IllegalArgumentException("El stock mínimo del producto no puede ser negativo.");
 		}
+		if (producto.getActivo() == null) {
+			producto.setActivo(true);
+		}
 
 		return productoRepository.save(producto);
 	}
 
 	public Producto updateProducto(Long id, Producto producto) {
-		Producto existente = productoRepository.findById(id)
+		Producto existente = productoRepository.findByIdAndActivoTrue(id)
 				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
 		producto.setId(id);
 		producto.setStock(existente.getStock());
+		producto.setActivo(existente.getActivo());
 		return saveProducto(producto);
 	}
 
@@ -55,22 +59,25 @@ public class ProductoService {
 		if (stock == null || stock < 0) {
 			throw new IllegalArgumentException("El stock no puede ser negativo.");
 		}
-		Producto existente = productoRepository.findById(id)
+		Producto existente = productoRepository.findByIdAndActivoTrue(id)
 				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
 		existente.setStock(stock);
 		return productoRepository.save(existente);
 	}
 
 	public boolean existsById(Long id) {
-		return productoRepository.existsById(id);
+		return productoRepository.findByIdAndActivoTrue(id).isPresent();
 	}
 
 	public void deleteProducto(Long id) {
-		productoRepository.deleteById(id);
+		Producto existente = productoRepository.findByIdAndActivoTrue(id)
+				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
+		existente.setActivo(false);
+		productoRepository.save(existente);
 	}
 
 	public Optional<Producto> getProductoByCodigoBarras(String codigoBarras) {
-		return productoRepository.findByCodigoBarras(codigoBarras);
+		return productoRepository.findByCodigoBarrasAndActivoTrue(codigoBarras);
 	}
 
 	public List<Producto> getLowStockProducts() {

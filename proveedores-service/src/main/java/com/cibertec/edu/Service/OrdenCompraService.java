@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
@@ -26,13 +27,16 @@ public class OrdenCompraService {
     private final IOrdenCompraRepository ordenCompraRepository;
     private final IDetalleOrdenCompraRepository detalleOrdenCompraRepository;
     private final RestTemplate restTemplate;
+    private final String kardexServiceUri;
 
     public OrdenCompraService(IOrdenCompraRepository ordenCompraRepository,
                               IDetalleOrdenCompraRepository detalleOrdenCompraRepository,
-                              RestTemplate restTemplate) {
+                              RestTemplate restTemplate,
+                              @Value("${app.services.kardex-uri:http://localhost:8082}") String kardexServiceUri) {
         this.ordenCompraRepository = ordenCompraRepository;
         this.detalleOrdenCompraRepository = detalleOrdenCompraRepository;
         this.restTemplate = restTemplate;
+        this.kardexServiceUri = kardexServiceUri;
     }
 
     public List<OrdenCompra> getAllOrdenes() {
@@ -106,9 +110,10 @@ public class OrdenCompraService {
             movement.put("idUsuario", idUsuario != null ? idUsuario : 1); // default admin ID = 1
 
             try {
-                restTemplate.postForObject("http://kardex-service/api/kardex/registrar", authorizedEntity(movement), Map.class);
+                restTemplate.postForObject(kardexServiceUri + "/api/kardex/registrar", authorizedEntity(movement), Map.class);
             } catch (Exception e) {
-                throw new RuntimeException("Error al registrar movimiento en kardex para producto " + detalle.getIdProducto() + ": " + e.getMessage());
+                throw new IllegalArgumentException("No se pudo actualizar el kárdex para el producto "
+                        + detalle.getIdProducto() + ". Intente nuevamente en unos segundos.");
             }
         }
 

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
@@ -22,10 +23,14 @@ public class KardexService {
 
     private final IKardexRepository kardexRepository;
     private final RestTemplate restTemplate;
+    private final String productosServiceUri;
 
-    public KardexService(IKardexRepository kardexRepository, RestTemplate restTemplate) {
+    public KardexService(IKardexRepository kardexRepository,
+                         RestTemplate restTemplate,
+                         @Value("${app.services.productos-uri:http://localhost:8081}") String productosServiceUri) {
         this.kardexRepository = kardexRepository;
         this.restTemplate = restTemplate;
+        this.productosServiceUri = productosServiceUri;
     }
 
     public List<Kardex> getAllKardex() {
@@ -41,7 +46,7 @@ public class KardexService {
         Long idProducto = movimiento.getIdProducto();
         
         // Fetch current product from productos-service via LoadBalanced RestTemplate
-        String productUrl = "http://productos-service/api/productos/" + idProducto;
+        String productUrl = productosServiceUri + "/api/productos/" + idProducto;
         Map<String, Object> product;
         try {
             ResponseEntity<Map> response = restTemplate.exchange(productUrl, HttpMethod.GET, authorizedEntity(null), Map.class);

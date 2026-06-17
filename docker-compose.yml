@@ -60,6 +60,8 @@ services:
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       APP_JWT_SECRET: ${JWT_SECRET:?Configure JWT_SECRET}
       TZ: America/Lima
+      KARDEX_SERVICE_URI: http://kardex:8082
+      PRODUCTOS_SERVICE_URI: http://productos:8081
     depends_on:
       db-seed:
         condition: service_completed_successfully

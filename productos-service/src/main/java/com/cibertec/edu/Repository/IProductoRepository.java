@@ -8,9 +8,13 @@ import com.cibertec.edu.Models.Producto;
 
 @Repository
 public interface IProductoRepository extends JpaRepository<Producto, Long> {
-    java.util.Optional<Producto> findByCodigoBarras(String codigoBarras);
+    List<Producto> findByActivoTrue();
 
-    @Query("SELECT p FROM Producto p WHERE p.stock <= p.stockMinimo")
+    java.util.Optional<Producto> findByIdAndActivoTrue(Long id);
+
+    java.util.Optional<Producto> findByCodigoBarrasAndActivoTrue(String codigoBarras);
+
+    @Query("SELECT p FROM Producto p WHERE p.activo = true AND p.stock <= p.stockMinimo")
     List<Producto> findLowStockProducts();
 }
 

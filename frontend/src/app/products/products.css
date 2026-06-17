@@ -357,12 +357,14 @@ body.dark-mode .row-critical-alert {
 .pill-3 { background: rgba(124, 58, 237, 0.14); color: #6d28d9; }
 .pill-4 { background: rgba(13, 148, 136, 0.14); color: #0f766e; }
 .pill-5 { background: rgba(71, 85, 105, 0.14); color: #475569; }
+.pill-6 { background: rgba(245, 158, 11, 0.16); color: #b45309; }
 
 body.dark-mode .pill-1 { color: #93c5fd; }
 body.dark-mode .pill-2 { color: #f9a8d4; }
 body.dark-mode .pill-3 { color: #c4b5fd; }
 body.dark-mode .pill-4 { color: #5eead4; }
 body.dark-mode .pill-5 { color: #cbd5e1; }
+body.dark-mode .pill-6 { color: #fcd34d; }
 
 .status-pill {
   padding: 0.3rem 0.7rem;

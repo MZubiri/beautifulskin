@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS RayosUV_db.authusuario (
     rol VARCHAR(30) NOT NULL DEFAULT 'ROLE_TRABAJADOR'
 );
 
+CREATE TABLE IF NOT EXISTS RayosUV_db.categoria (
+    id_categoria BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+);
+
+INSERT INTO RayosUV_db.categoria (id_categoria, nombre) VALUES
+(1, 'Niños'), (2, 'Niñas'), (3, 'Mujer'), (4, 'Hombre'), (5, 'Accesorios'), (6, 'Unisex')
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+
 -- Repara las credenciales de demostración sin borrar otros usuarios ni datos.
 INSERT INTO RayosUV_db.authusuario (username, password_user, rol) VALUES
 ('Admin', '$2b$10$jXHHbaFKyC8JYHZpnn927usJ8AGncBMoaMgdTQqUH.OXiNhmMZJA2', 'ROLE_ADMIN'),

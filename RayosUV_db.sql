@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS RayosUV_db.producto (
     stock_minimo INT NOT NULL DEFAULT 5,
     codigo_barras VARCHAR(50) UNIQUE,
     imagen_url VARCHAR(255),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (id_categoria) REFERENCES RayosUV_db.categoria(id_categoria)
 );
 
@@ -80,7 +81,7 @@ CREATE TABLE IF NOT EXISTS RayosUV_db.kardex (
 DROP TABLE IF EXISTS RayosUV_db.refresh_token;
 
 INSERT INTO RayosUV_db.categoria (id_categoria, nombre) VALUES
-(1, 'Niños'), (2, 'Niñas'), (3, 'Mujer'), (4, 'Hombre'), (5, 'Accesorios')
+(1, 'Niños'), (2, 'Niñas'), (3, 'Mujer'), (4, 'Hombre'), (5, 'Accesorios'), (6, 'Unisex')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- Credenciales demo: Admin/admin y trabajador1/trabajador
@@ -152,4 +153,4 @@ INSERT INTO RayosUV_db.kardex
 (17, 10, 'ENTRADA', 60, 0, 60, 'Inventario inicial', 1, '2026-05-01 08:25:00');
 
 -- Resumen esperado tras ejecutar el script:
--- 10 productos, 4 proveedores, 4 órdenes, 9 detalles y 17 movimientos de kárdex.
+-- 6 categorías, 10 productos, 4 proveedores, 4 órdenes, 9 detalles y 17 movimientos de kárdex.

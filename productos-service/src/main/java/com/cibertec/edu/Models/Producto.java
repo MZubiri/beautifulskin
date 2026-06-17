@@ -37,6 +37,8 @@ public class Producto {
 	    private String codigoBarras;
 	    @Column(name = "imagen_url")
 	    private String imagenUrl;
+	    @Column(name = "activo", nullable = false)
+	    private Boolean activo = true;
 	    public Producto() {
 	    }
 		public Long getId() {
@@ -92,6 +94,12 @@ public class Producto {
 		}
 		public void setImagenUrl(String imagenUrl) {
 			this.imagenUrl = imagenUrl;
+		}
+		public Boolean getActivo() {
+			return activo;
+		}
+		public void setActivo(Boolean activo) {
+			this.activo = activo;
 		}
 
 }

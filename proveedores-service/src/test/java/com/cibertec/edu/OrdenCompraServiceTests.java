@@ -27,7 +27,7 @@ class OrdenCompraServiceTests {
         ordenRepository = mock(IOrdenCompraRepository.class);
         detalleRepository = mock(IDetalleOrdenCompraRepository.class);
         restTemplate = mock(RestTemplate.class);
-        service = new OrdenCompraService(ordenRepository, detalleRepository, restTemplate);
+        service = new OrdenCompraService(ordenRepository, detalleRepository, restTemplate, "http://kardex-service");
         when(ordenRepository.save(any())).thenAnswer(invocation -> {
             OrdenCompra orden = invocation.getArgument(0);
             orden.setId(1L);

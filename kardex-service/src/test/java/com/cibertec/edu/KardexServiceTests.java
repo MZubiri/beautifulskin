@@ -23,7 +23,7 @@ class KardexServiceTests {
     void setUp() {
         repository = mock(IKardexRepository.class);
         restTemplate = mock(RestTemplate.class);
-        service = new KardexService(repository, restTemplate);
+        service = new KardexService(repository, restTemplate, "http://productos-service");
         when(restTemplate.exchange(contains("/api/productos/1"), eq(org.springframework.http.HttpMethod.GET), any(), eq(Map.class)))
                 .thenReturn(ResponseEntity.ok(Map.of("stock", 10)));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

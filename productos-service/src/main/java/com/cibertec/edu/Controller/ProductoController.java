@@ -127,7 +127,11 @@ public class ProductoController {
         if (!productoService.existsById(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        productoService.deleteProducto(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        try {
+            productoService.deleteProducto(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
