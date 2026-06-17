@@ -33,7 +33,7 @@ public class KardexService {
     public KardexService(IKardexRepository kardexRepository,
                          RestTemplate restTemplate,
                          JdbcTemplate jdbcTemplate,
-                         @Value("${app.services.productos-uri:http://localhost:8081}") String productosServiceUri) {
+                         @Value("${PRODUCTOS_SERVICE_URI:${app.services.productos-uri:http://localhost:8081}}") String productosServiceUri) {
         this.kardexRepository = kardexRepository;
         this.restTemplate = restTemplate;
         this.jdbcTemplate = jdbcTemplate;

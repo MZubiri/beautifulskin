@@ -34,7 +34,7 @@ public class OrdenCompraService {
     public OrdenCompraService(IOrdenCompraRepository ordenCompraRepository,
                               IDetalleOrdenCompraRepository detalleOrdenCompraRepository,
                               RestTemplate restTemplate,
-                              @Value("${app.services.kardex-uri:http://localhost:8082}") String kardexServiceUri) {
+                              @Value("${KARDEX_SERVICE_URI:${app.services.kardex-uri:http://localhost:8082}}") String kardexServiceUri) {
         this.ordenCompraRepository = ordenCompraRepository;
         this.detalleOrdenCompraRepository = detalleOrdenCompraRepository;
         this.restTemplate = restTemplate;

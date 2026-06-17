@@ -62,6 +62,8 @@ services:
       TZ: America/Lima
       KARDEX_SERVICE_URI: http://kardex:8082
       PRODUCTOS_SERVICE_URI: http://productos:8081
+      APP_SERVICES_KARDEX_URI: http://kardex:8082
+      APP_SERVICES_PRODUCTOS_URI: http://productos:8081
     depends_on:
       db-seed:
         condition: service_completed_successfully
