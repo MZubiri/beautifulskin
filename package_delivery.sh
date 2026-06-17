@@ -8,7 +8,8 @@ rm -f "$OUTPUT"
 cd "$BASE_DIR"
 zip -r "$OUTPUT" . \
   -x '*/node_modules/*' '*/target/*' '*/dist/*' '*/bin/*' \
-     '*/.angular/*' '*/.settings/*' '*/.vscode/*' \
-     '*/.classpath' '*/.project' '*/.factorypath' '*.log' '*.zip'
+     '.git/*' '.idea/*' '.angular/*' '.vscode/*' \
+     '*/.git/*' '*/.idea/*' '*/.angular/*' '*/.settings/*' '*/.vscode/*' \
+     '*/uploads/*' '*/.classpath' '*/.project' '*/.factorypath' '*.log' '*.zip'
 
 echo "Entrega creada en: $OUTPUT"
