@@ -580,8 +580,7 @@ export class Products implements OnInit {
 
   receiveOrder(id: number): void {
     this.isLoading.set(true);
-    const userId = this.authService.getUserId();
-    this.proveedorService.recibirOrdenCompra(id, userId).subscribe({
+    this.proveedorService.recibirOrdenCompra(id).subscribe({
       next: () => {
         this.loadProducts();
         this.loadKardex();

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Proveedor {
@@ -78,11 +78,7 @@ export class ProveedorService {
     return this.http.post<OrdenCompra>(`${this.apiUrl}/ordenes`, dto);
   }
 
-  recibirOrdenCompra(id: number, idUsuario?: number): Observable<OrdenCompra> {
-    let params = new HttpParams();
-    if (idUsuario !== undefined) {
-      params = params.set('idUsuario', idUsuario.toString());
-    }
-    return this.http.post<OrdenCompra>(`${this.apiUrl}/ordenes/${id}/recibir`, {}, { params });
+  recibirOrdenCompra(id: number): Observable<OrdenCompra> {
+    return this.http.post<OrdenCompra>(`${this.apiUrl}/ordenes/${id}/recibir`, {});
   }
 }
