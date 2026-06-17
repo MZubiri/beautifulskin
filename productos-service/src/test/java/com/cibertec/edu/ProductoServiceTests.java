@@ -34,12 +34,12 @@ class ProductoServiceTests {
     }
 
     @Test void listaProductos() {
-        when(repository.findByActivoTrue()).thenReturn(List.of(producto(10)));
+        when(repository.findVisibleProducts()).thenReturn(List.of(producto(10)));
         assertEquals(1, service.getAllProductos().size());
     }
 
     @Test void buscaProducto() {
-        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(producto(10)));
+        when(repository.findVisibleById(1L)).thenReturn(Optional.of(producto(10)));
         assertTrue(service.getProductoById(1L).isPresent());
     }
 
@@ -52,14 +52,14 @@ class ProductoServiceTests {
     @Test void actualizaProductoSinCambiarStock() {
         Producto existente = producto(25);
         Producto cambios = producto(999);
-        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(repository.findVisibleById(1L)).thenReturn(Optional.of(existente));
         when(repository.save(cambios)).thenReturn(cambios);
         assertEquals(25, service.updateProducto(1L, cambios).getStock());
     }
 
     @Test void eliminaProducto() {
         Producto p = producto(10);
-        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(p));
+        when(repository.findVisibleById(1L)).thenReturn(Optional.of(p));
         service.deleteProducto(1L);
         assertFalse(p.getActivo());
         verify(repository).save(p);

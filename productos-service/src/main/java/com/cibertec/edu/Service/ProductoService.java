@@ -19,11 +19,11 @@ public class ProductoService {
 	}
 
 	public List<Producto> getAllProductos() {
-		return productoRepository.findByActivoTrue();
+		return productoRepository.findVisibleProducts();
 	}
   
 	public Optional<Producto> getProductoById(Long id) {
-		return productoRepository.findByIdAndActivoTrue(id);
+		return productoRepository.findVisibleById(id);
 	} 
   
 	public Producto saveProducto(Producto producto) {
@@ -47,7 +47,7 @@ public class ProductoService {
 	}
 
 	public Producto updateProducto(Long id, Producto producto) {
-		Producto existente = productoRepository.findByIdAndActivoTrue(id)
+		Producto existente = productoRepository.findVisibleById(id)
 				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
 		producto.setId(id);
 		producto.setStock(existente.getStock());
@@ -59,25 +59,25 @@ public class ProductoService {
 		if (stock == null || stock < 0) {
 			throw new IllegalArgumentException("El stock no puede ser negativo.");
 		}
-		Producto existente = productoRepository.findByIdAndActivoTrue(id)
+		Producto existente = productoRepository.findVisibleById(id)
 				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
 		existente.setStock(stock);
 		return productoRepository.save(existente);
 	}
 
 	public boolean existsById(Long id) {
-		return productoRepository.findByIdAndActivoTrue(id).isPresent();
+		return productoRepository.findVisibleById(id).isPresent();
 	}
 
 	public void deleteProducto(Long id) {
-		Producto existente = productoRepository.findByIdAndActivoTrue(id)
+		Producto existente = productoRepository.findVisibleById(id)
 				.orElseThrow(() -> new IllegalArgumentException("El producto no existe."));
 		existente.setActivo(false);
 		productoRepository.save(existente);
 	}
 
 	public Optional<Producto> getProductoByCodigoBarras(String codigoBarras) {
-		return productoRepository.findByCodigoBarrasAndActivoTrue(codigoBarras);
+		return productoRepository.findVisibleByCodigoBarras(codigoBarras);
 	}
 
 	public List<Producto> getLowStockProducts() {

@@ -73,9 +73,8 @@ El script SQL se incluye dentro de la imagen MySQL mediante `Dockerfile.mysql`.
 Esto permite que la inicialización funcione también cuando Coolify construye el
 Compose sin conservar archivos relativos como montajes bind.
 
-El servicio interno `db-seed` también asegura los usuarios demo en cada
-despliegue. Es idempotente: repara `Admin/admin` y
-`trabajador1/trabajador` sin borrar los demás usuarios ni datos existentes.
+El servicio interno `db-seed` asegura categorías y compatibilidad de columnas
+sin recrear usuarios ni borrar datos existentes.
 
 Coolify proporciona `SERVICE_URL_FRONTEND` al Compose. El Gateway utiliza ese
 valor como origen CORS permitido y conserva `http://localhost:4200` como valor
