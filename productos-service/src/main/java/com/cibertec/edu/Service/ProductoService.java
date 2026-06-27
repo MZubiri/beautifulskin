@@ -42,6 +42,9 @@ public class ProductoService {
 		if (producto.getActivo() == null) {
 			producto.setActivo(true);
 		}
+		if (producto.getCodigoBarras() != null && producto.getCodigoBarras().trim().isEmpty()) {
+			producto.setCodigoBarras(null);
+		}
 
 		return productoRepository.save(producto);
 	}
